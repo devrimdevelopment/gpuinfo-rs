@@ -69,6 +69,54 @@ pub enum GpuError {
     /// CSF version check failed
     #[error("CSF version check failed: {0}")]
     CsfVersionCheck(String),
+
+    // === Neue Varianten für Adreno/KGSL ===
+    
+    /// Permission denied when accessing GPU device
+    #[error("Permission denied when accessing GPU device")]
+    PermissionDenied,
+
+    /// Driver not supported (ioctl not implemented)
+    #[error("GPU driver not supported")]
+    DriverNotSupported,
+
+    /// Optional ioctl failed (non-critical)
+    #[error("Optional ioctl '{request}' failed: {source}")]
+    OptionalIoctlFailed {
+        /// Name of the optional ioctl
+        request: &'static str,
+        /// The underlying I/O error
+        #[source]
+        source: std::io::Error,
+    },
+
+    /// Insufficient data for operation
+    #[error("Insufficient data for GPU ID 0x{chip_id:08X}: {details}")]
+    InsufficientData {
+        /// Chip ID with insufficient data
+        chip_id: u32,
+        /// Details about what data is missing
+        details: String,
+    },
+
+    /// Unsupported architecture
+    #[error("Unsupported GPU architecture: chip_id=0x{chip_id:08X}, architecture={architecture}")]
+    UnsupportedArchitecture {
+        /// Chip ID
+        chip_id: u32,
+        /// Architecture string
+        architecture: String,
+    },
+
+    /// Adreno-specific property error
+    #[error("Adreno property error (property={property:#x}): {source}")]
+    AdrenoPropertyError {
+        /// Property type that failed
+        property: u32,
+        /// The underlying I/O error
+        #[source]
+        source: std::io::Error,
+    },
 }
 
 impl GpuError {
@@ -97,12 +145,15 @@ impl GpuError {
         match self {
             GpuError::Io(e) => Some(e),
             GpuError::IoctlFailed { source, .. } => Some(source),
+            GpuError::OptionalIoctlFailed { source, .. } => Some(source),
+            GpuError::AdrenoPropertyError { source, .. } => Some(source),
             _ => None,
         }
     }
 
     /// Check if error indicates permission issues
     pub fn is_permission_error(&self) -> bool {
+        matches!(self, GpuError::PermissionDenied) ||
         self.as_io_error()
             .map(|e| e.kind() == std::io::ErrorKind::PermissionDenied)
             .unwrap_or(false)
@@ -110,6 +161,7 @@ impl GpuError {
 
     /// Check if error indicates the device doesn't exist
     pub fn is_not_found_error(&self) -> bool {
+        matches!(self, GpuError::DeviceNotFound) ||
         self.as_io_error()
             .map(|e| e.kind() == std::io::ErrorKind::NotFound)
             .unwrap_or(false)
@@ -118,6 +170,11 @@ impl GpuError {
     /// Check if error is due to invalid GPU properties
     pub fn is_invalid_properties(&self) -> bool {
         matches!(self, GpuError::InvalidGpuProperties(_))
+    }
+
+    /// Check if error is due to driver not being supported
+    pub fn is_driver_not_supported(&self) -> bool {
+        matches!(self, GpuError::DriverNotSupported)
     }
 }
 

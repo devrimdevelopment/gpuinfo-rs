@@ -1,65 +1,68 @@
-//! Demonstration of Parity vs Extended mode differences for Mali GPUs
+//! Demonstrate different query modes for Mali GPUs
+//! Shows Parity vs Extended mode differences
 
-use gpu_info::{query_gpu_with_mode, GpuResult, Mode};
-use std::env;
+use armgpuinfo::{query_gpu_with_mode, Mode};
 
-fn main() -> GpuResult<()> {
-    println!("ARM Mali GPU Info - Mode Comparison Demo");
-    println!("=========================================\n");
-
-    let device_path = env::args().nth(1).unwrap_or_else(|| "/dev/mali0".to_string());
-
-    println!("Testing device: {}", device_path);
-    println!();
-
-    // Try Parity mode first
-    match query_gpu_with_mode(&device_path, Mode::Parity) {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    println!("Mali GPU Mode Comparison Demo");
+    println!("=============================\n");
+    
+    // Device path (adjust if needed)
+    let device_path = "/dev/mali0";
+    
+    // Test Parity Mode (lenient, like libgpuinfo)
+    println!("1. Parity Mode (lenient):");
+    match query_gpu_with_mode(device_path, Mode::Parity) {
         Ok(info) => {
-            println!("✅ PARITY MODE (libgpuinfo clone):");
-            println!("  Name:           {}", info.gpu_name);
-            println!("  Architecture:   {}", info.architecture);
-            println!("  GPU ID:         0x{:04X}",
-                info.mali_data.as_ref().map(|m| m.gpu_id).unwrap_or(0));
-            println!("  Shader Cores:   {}", info.num_shader_cores);
-            println!("  L2 Cache:       {} KB", info.num_l2_bytes / 1024);
-            println!("  Bus Width:      {}",
-                if info.num_bus_bits > 0 { format!("{} bits", info.num_bus_bits) }
-                else { "Not available".to_string() });
+            println!("   ✅ Success!");
+            print_gpu_info(&info, false);
         }
         Err(e) => {
-            println!("❌ PARITY MODE failed: {}", e);
-        }
-    }
-
-    println!("---");
-
-    // Try Extended mode
-    match query_gpu_with_mode(&device_path, Mode::Extended) {
-        Ok(info) => {
-            println!("✅ EXTENDED MODE (enhanced features):");
-            println!("  Name:           {}", info.gpu_name);
-            println!("  Architecture:   {} ({}.{})",
-                info.architecture, info.architecture_major, info.architecture_minor);
-            println!("  GPU ID:         0x{:04X}",
-                info.mali_data.as_ref().map(|m| m.gpu_id).unwrap_or(0));
-            println!("  Shader Cores:   {}", info.num_shader_cores);
-            println!("  L2 Cache:       {} KB", info.num_l2_bytes / 1024);
-
-            if let Some(mali) = info.mali_data {
-                println!("  Execution Eng.: {} per core", mali.num_exec_engines);
-                println!("  FP32 FMAs/Core: {}", mali.num_fp32_fmas_per_core);
-                println!("  FP16 FMAs/Core: {}", mali.num_fp16_fmas_per_core);
-                println!("  Texels/Core:    {}", mali.num_texels_per_core);
-                println!("  Pixels/Core:    {}", mali.num_pixels_per_core);
+            println!("   ❌ Error: {}", e);
+            if e.is_permission_error() {
+                println!("   💡 Try: sudo chmod 666 {}", device_path);
             }
-
-            println!("  Bus Width:      {} bits", info.num_bus_bits);
-            // println!("  FP16 Support:   {}", if info.supports_fp16() { "✅ Yes" } else { "❌ No" }); // to fix
-        }
-        Err(e) => {
-            println!("❌ EXTENDED MODE failed: {}", e);
         }
     }
-
+    
+    println!("\n2. Extended Mode (strict validation):");
+    match query_gpu_with_mode(device_path, Mode::Extended) {
+        Ok(info) => {
+            println!("   ✅ Success!");
+            print_gpu_info(&info, true);
+        }
+        Err(e) => {
+            println!("   ❌ Error: {}", e);
+            println!("   💡 Extended mode enforces stricter validation");
+        }
+    }
+    
+    println!("\n3. Mode Differences:");
+    println!("   • Parity:   Lenient, ignores some errors");
+    println!("   • Extended: Strict validation, more details");
+    println!("   • Use Parity for compatibility");
+    println!("   • Use Extended for reliability");
+    
     Ok(())
+}
+
+fn print_gpu_info(info: &armgpuinfo::GpuInfo, extended: bool) {
+    println!("   Vendor: {:?}", info.vendor);
+    println!("   Model: {}", info.gpu_name);
+    println!("   Architecture: {}", info.architecture);
+    println!("   Shader Cores: {}", info.num_shader_cores);
+    
+    if let Some(mali) = &info.mali_data {
+        println!("   GPU ID: 0x{:08X}", mali.gpu_id);
+        println!("   L2 Slices: {}", mali.num_l2_slices);
+        
+        if extended {
+            println!("   Execution Engines: {}", mali.num_exec_engines);
+            println!("   FP32 FMAs/Core: {}", mali.num_fp32_fmas_per_core);
+            println!("   Texels/Core: {}", mali.num_texels_per_core);
+        }
+    }
+    
+    println!("   L2 Cache: {} bytes", info.num_l2_bytes);
+    println!("   Bus Width: {} bits", info.num_bus_bits);
 }
