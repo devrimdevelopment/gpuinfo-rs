@@ -1,0 +1,45 @@
+[package]
+name = "gpu-info"
+version = "0.2.0"
+edition = "2021"
+authors = ["Devrim Development"]
+description = "A high-performance library for querying ARM Mali and Qualcomm Adreno GPU hardware information via kernel ioctls on Linux and Android."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/devrimdevelopment/gpuinfo-rs/"
+keywords = ["gpu", "mali", "adreno", "arm", "android", "linux"]
+categories = ["hardware-support", "os"]
+readme = "README.md"
+
+[features]
+default = ["mali", "adreno", "auto-detect"]
+mali = ["nix"]
+adreno = []
+auto-detect = []
+
+[dependencies]
+nix = { version = "0.30.1", features = ["ioctl"], optional = true }
+thiserror = "2.0.17"
+libc = "0.2"
+
+[dev-dependencies]
+tempfile = "3.8"
+assert_matches = "1.5"
+
+[[example]]
+name = "mode_demo"
+path = "examples/mode_demo.rs"
+required-features = ["mali"]
+
+[[example]]
+name = "adreno_demo"
+path = "examples/adreno_demo.rs"
+required-features = ["adreno"]
+
+[[example]]
+name = "auto_detect_demo"
+path = "examples/auto_detect_demo.rs"
+required-features = ["auto-detect"]
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"]
+all-features = true
