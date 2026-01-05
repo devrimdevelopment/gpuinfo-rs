@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fs::File;
 use std::os::unix::io::AsRawFd;
 use std::path::Path;
@@ -48,18 +49,21 @@ fn query_adreno_parity<P: AsRef<Path>>(device_path: P) -> GpuResult<GpuInfo> {
         gpu_model_code: device_info.gpu_model,
         mmu_enabled: device_info.mmu_enabled != 0,
         gmem_size_bytes: device_info.gmem_sizebytes,
-        spec_confidence: specs.confidence.to_string(),
+        spec_confidence: specs.confidence.as_cow(),  // ← Geändert
         stream_processors: specs.stream_processors,
         max_freq_mhz: specs.max_freq_mhz,
         process_nm: specs.process_nm,
         release_year: specs.year,
-        snapdragon_models: specs.snapdragon_models.iter().map(|&s| s.to_string()).collect(),
+        snapdragon_models: specs.snapdragon_models
+            .iter()
+            .map(|&s| std::borrow::Cow::Borrowed(s))  // ← Geändert
+            .collect(),
     };
 
     Ok(GpuInfo {
         vendor: GpuVendor::Adreno,
-        gpu_name: specs.name.to_string(),
-        architecture: specs.architecture.to_string(),
+        gpu_name: std::borrow::Cow::Borrowed(specs.name),  // ← Geändert
+        architecture: specs.architecture.to_string().into(),
         architecture_major: major,
         architecture_minor: minor,
         num_shader_cores: specs.shader_cores,
@@ -106,18 +110,21 @@ fn query_adreno_extended<P: AsRef<Path>>(device_path: P) -> GpuResult<GpuInfo> {
         gpu_model_code: device_info.gpu_model,
         mmu_enabled: device_info.mmu_enabled != 0,
         gmem_size_bytes: device_info.gmem_sizebytes,
-        spec_confidence: specs.confidence.to_string(),
+        spec_confidence: specs.confidence.as_cow(),  // ← Geändert
         stream_processors: specs.stream_processors,
         max_freq_mhz: specs.max_freq_mhz,
         process_nm: specs.process_nm,
         release_year: specs.year,
-        snapdragon_models: specs.snapdragon_models.iter().map(|&s| s.to_string()).collect(),
+        snapdragon_models: specs.snapdragon_models
+            .iter()
+            .map(|&s| std::borrow::Cow::Borrowed(s))  // ← Geändert
+            .collect(),
     };
 
-    Ok(GpuInfo {
+   Ok(GpuInfo {
         vendor: GpuVendor::Adreno,
-        gpu_name: specs.name.to_string(),
-        architecture: specs.architecture.to_string(),
+        gpu_name: std::borrow::Cow::Borrowed(specs.name),  // ← Geändert
+        architecture: specs.architecture.to_string().into(),
         architecture_major: major,
         architecture_minor: minor,
         num_shader_cores: specs.shader_cores,

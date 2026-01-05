@@ -1,6 +1,7 @@
 use std::collections::HashMap;
+use std::borrow::Cow; 
 use std::sync::OnceLock;
-
+use std::fs::OpenOptions;
 // Product database structures
 pub struct ProductEntry {
     pub id: u32,
@@ -12,6 +13,17 @@ pub struct ProductEntry {
     pub get_num_texels: fn(u32, u32, u32) -> u32,
     pub get_num_pixels: fn(u32, u32, u32) -> u32,
     pub get_num_exec_engines: fn(u32, u32, u32) -> u32,
+}
+
+// Helper für Cow-Konvertierung
+impl ProductEntry {
+    pub fn name_as_cow(&self) -> Cow<'static, str> {
+        Cow::Borrowed(self.name)
+    }
+    
+    pub fn architecture_as_cow(&self) -> Cow<'static, str> {
+        Cow::Borrowed(self.architecture)
+    }
 }
 
 const MASK_OLD: u32 = 0xFFFF;
@@ -502,21 +514,22 @@ fn product_map() -> &'static HashMap<u32, Vec<&'static ProductEntry>> {
     static MAP: OnceLock<HashMap<u32, Vec<&'static ProductEntry>>> = OnceLock::new();
 
     MAP.get_or_init(|| {
-        let mut map = HashMap::new();
-        for entry in &PRODUCT_VERSIONS {
-            map.entry(entry.id).or_insert_with(Vec::new).push(entry);
-        }
-        map
+        // Iterator-Kette mit collect() - am idiomatischsten!
+        PRODUCT_VERSIONS
+            .iter()
+            .fold(HashMap::new(), |mut map, entry| {
+                map.entry(entry.id).or_default().push(entry);
+                map
+            })
     })
 }
 
 pub(crate) fn get_gpu_id(input_id: u32) -> u32 {
-    for entry in PRODUCT_VERSIONS.iter() {
-        if (input_id & entry.mask) == entry.id {
-            return entry.id;
-        }
-    }
-    input_id
+    PRODUCT_VERSIONS
+        .iter()
+        .find(|entry| (input_id & entry.mask) == entry.id)
+        .map(|entry| entry.id)
+        .unwrap_or(input_id)
 }
 
 pub(crate) fn lookup_product(gpu_id: u32, core_count: u32) -> Option<&'static ProductEntry> {

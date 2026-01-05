@@ -2,7 +2,7 @@
 //!
 //! This library provides a unified interface to query GPU information
 //! for both ARM Mali and Qualcomm Adreno GPUs on Linux/Android systems.
-
+pub use info::GpuInfoBuilder;  
 // Common modules
 pub mod error;
 pub mod info;
@@ -13,6 +13,7 @@ pub mod mali;
 
 #[cfg(feature = "adreno")]
 pub mod adreno;
+
 
 #[cfg(feature = "auto-detect")]
 pub mod detect;
@@ -62,4 +63,20 @@ pub fn query_gpu_unified<P: AsRef<std::path::Path>>(
     device_path: Option<P>
 ) -> GpuResult<GpuInfo> {
     query_gpu_auto(device_path)
+}
+
+pub trait IntoCow {
+    fn into_cow(self) -> std::borrow::Cow<'static, str>;
+}
+
+impl IntoCow for &'static str {
+    fn into_cow(self) -> std::borrow::Cow<'static, str> {
+        std::borrow::Cow::Borrowed(self)
+    }
+}
+
+impl IntoCow for String {
+    fn into_cow(self) -> std::borrow::Cow<'static, str> {
+        std::borrow::Cow::Owned(self)
+    }
 }

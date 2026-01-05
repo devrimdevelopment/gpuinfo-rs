@@ -13,60 +13,70 @@ readme = "README.md"
 [package.metadata.docs.rs]
 targets = [
     "aarch64-unknown-linux-gnu",      # ARM64 Linux
-    "armv7-unknown-linux-gnueabihf",  # ARMv7 Linux
-    "aarch64-linux-android",          # ARM64 Android
-    "armv7-linux-androideabi",        # ARMv7 Android
-]
-rustdoc-args = ["--cfg", "docsrs"]
-all-features = true
+        "armv7-unknown-linux-gnueabihf",  # ARMv7 Linux
+            "aarch64-linux-android",          # ARM64 Android
+                "armv7-linux-androideabi",        # ARMv7 Android
+                ]
+                rustdoc-args = ["--cfg", "docsrs"]
+                all-features = true
 
-[features]
-default = ["mali", "adreno", "auto-detect"]
-mali = ["dep:nix"]
-adreno = ["dep:nix"]
-auto-detect = []
+                [features]
+                default = ["mali", "adreno", "auto-detect"]
+                mali = ["dep:nix"]
+                adreno = ["dep:nix"]
+                auto-detect = []
 
-strict = []
+                strict = []
 
-[dependencies]
-nix = { version = "0.30.1", features = ["ioctl"], optional = true }
+                [dependencies]
+                nix = { version = "0.30.1", features = ["ioctl"], optional = true }
 
-thiserror = "2.0.17"
+                thiserror = "2.0.17"
 
-libc = "0.2"
+                libc = "0.2"
 
-[dev-dependencies]
-tempfile = "3.8"
-assert_matches = "1.5"
+                [dev-dependencies]
+                tempfile = "3.8"
+                assert_matches = "1.5"
 
-# Conditional dev-dependencies für Platform-spezifische Tests
-[target.'cfg(any(target_arch = "arm", target_arch = "aarch64"))'.dev-dependencies]
-# Nur auf ARM: Mock-Treiber für Tests
-mockall = "0.12"
+                # Conditional dev-dependencies für Platform-spezifische Tests
+                [target.'cfg(any(target_arch = "arm", target_arch = "aarch64"))'.dev-dependencies]
+                # Nur auf ARM: Mock-Treiber für Tests
+                mockall = "0.12"
 
-# Beispiele mit Feature-Requirements
-[[example]]
-name = "mode_demo"
-path = "examples/mode_demo.rs"
-required-features = ["mali"]
+                # Beispiele mit Feature-Requirements
+                [[example]]
+                name = "mode_demo"
+                path = "examples/mode_demo.rs"
+                required-features = ["mali"]
 
-[[example]]
-name = "adreno_demo"
-path = "examples/adreno_demo.rs"
-required-features = ["adreno"]
+                [[example]]
+                name = "adreno_demo"
+                path = "examples/adreno_demo.rs"
+                required-features = ["adreno"]
 
-[[example]]
-name = "auto_detect_demo"
-path = "examples/auto_detect_demo.rs"
-required-features = ["auto-detect"]
+                [[example]]
+                name = "auto_detect_demo"
+                path = "examples/auto_detect_demo.rs"
+                required-features = ["auto-detect"]
 
-# Neues Beispiel: Strategie-Vergleich
-[[example]]
-name = "strategy_comparison"
-path = "examples/strategy_comparison.rs"
-required-features = ["mali", "adreno"]
+                # Neues Beispiel: Strategie-Vergleich
+                [[example]]
+                name = "strategy_comparison"
+                path = "examples/strategy_comparison.rs"
+                required-features = ["mali", "adreno"]
 
-[[example]]
-name = "unsupported_demo"
-path = "examples/unsupported_demo.rs"
-required-features = ["auto-detect"]
+                [[example]]
+                name = "unsupported_demo"
+                path = "examples/unsupported_demo.rs"
+                required-features = ["auto-detect"]
+
+                [[example]]
+                name = "simple_demo"
+                path = "examples/simple_demo.rs"
+                required-features = ["auto-detect"]
+
+                [[example]]
+                name = "my_example"
+                path = "examples/my_example.rs"
+                required-features = ["auto-detect"]

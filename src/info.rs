@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt;
 
 /// GPU vendor types
@@ -39,12 +40,12 @@ pub struct AdrenoData {
     pub gpu_model_code: u32,
     pub mmu_enabled: bool,
     pub gmem_size_bytes: u32,
-    pub spec_confidence: String,
+    pub spec_confidence: Cow<'static, str>,  // Geändert von String zu Cow
     pub stream_processors: u32,
     pub max_freq_mhz: u32,
     pub process_nm: u32,
     pub release_year: u32,
-    pub snapdragon_models: Vec<String>,
+    pub snapdragon_models: Vec<Cow<'static, str>>,  // Geändert von Vec<String> zu Vec<Cow>
 }
 
 /// Unified GPU information structure
@@ -52,8 +53,8 @@ pub struct AdrenoData {
 pub struct GpuInfo {
     // Common fields for all GPUs
     pub vendor: GpuVendor,
-    pub gpu_name: String,
-    pub architecture: String,
+    pub gpu_name: Cow<'static, str>,           // Geändert von String zu Cow
+    pub architecture: Cow<'static, str>,       // Geändert von String zu Cow
     pub architecture_major: u8,
     pub architecture_minor: u8,
     pub num_shader_cores: u32,
@@ -185,8 +186,8 @@ impl fmt::Display for GpuInfo {
 #[derive(Debug, Default)]
 pub struct GpuInfoBuilder {
     // Common fields
-    gpu_name: Option<String>,
-    architecture: Option<String>,
+    gpu_name: Option<Cow<'static, str>>,        // Geändert von Option<String> zu Option<Cow>
+    architecture: Option<Cow<'static, str>>,    // Geändert von Option<String> zu Option<Cow>
     architecture_major: Option<u8>,
     architecture_minor: Option<u8>,
     num_shader_cores: Option<u32>,
@@ -206,14 +207,14 @@ pub struct GpuInfoBuilder {
 }
 
 impl GpuInfoBuilder {
-    // Builder methods (same as before for backward compatibility)
-    pub fn gpu_name(mut self, name: String) -> Self {
-        self.gpu_name = Some(name);
+    // Builder methods (mit Cow-Unterstützung für backward compatibility)
+    pub fn gpu_name(mut self, name: impl Into<Cow<'static, str>>) -> Self {
+        self.gpu_name = Some(name.into());
         self
     }
 
-    pub fn architecture(mut self, arch: String) -> Self {
-        self.architecture = Some(arch);
+    pub fn architecture(mut self, arch: impl Into<Cow<'static, str>>) -> Self {
+        self.architecture = Some(arch.into());
         self
     }
 

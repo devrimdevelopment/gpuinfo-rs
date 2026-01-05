@@ -1,5 +1,5 @@
+use std::borrow::Cow; 
 use std::fmt;
-
 /// Adreno GPU architecture
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AdrenoArch {
@@ -12,13 +12,14 @@ pub enum AdrenoArch {
 
 impl fmt::Display for AdrenoArch {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            AdrenoArch::A4xx => write!(f, "Adreno 4xx"),
-            AdrenoArch::A5xx => write!(f, "Adreno 5xx"),
-            AdrenoArch::A6xx => write!(f, "Adreno 6xx"),
-            AdrenoArch::A7xx => write!(f, "Adreno 7xx"),
-            AdrenoArch::A8xx => write!(f, "Adreno 8xx"),
-        }
+        let s = match self {
+            AdrenoArch::A4xx => "Adreno 4xx",
+            AdrenoArch::A5xx => "Adreno 5xx",
+            AdrenoArch::A6xx => "Adreno 6xx",
+            AdrenoArch::A7xx => "Adreno 7xx",
+            AdrenoArch::A8xx => "Adreno 8xx",
+        };
+        write!(f, "{}", s)
     }
 }
 
@@ -32,30 +33,31 @@ pub enum SpecConfidence {
     /// Estimated/heuristic (common for undisclosed modern specs)
     Heuristic,
 }
-
-impl fmt::Display for SpecConfidence {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl SpecConfidence {
+    // Methode, die Cow zurückgibt
+    pub fn as_cow(&self) -> Cow<'static, str> {
         match self {
-            SpecConfidence::Measured => write!(f, "Measured"),
-            SpecConfidence::ReverseEngineered => write!(f, "Reverse Engineered"),
-            SpecConfidence::Heuristic => write!(f, "Heuristic"),
+            SpecConfidence::Measured => Cow::Borrowed("Measured"),
+            SpecConfidence::ReverseEngineered => Cow::Borrowed("Reverse Engineered"),
+            SpecConfidence::Heuristic => Cow::Borrowed("Heuristic"),
         }
     }
 }
+
 
 /// Adreno GPU specifications based on chip ID
 #[derive(Debug, Clone, Copy)]
 pub struct AdrenoSpecs {
     pub name: &'static str,
     pub architecture: AdrenoArch,
-    pub shader_cores: u32,         // Shader clusters / pipelines
-    pub stream_processors: u32,    // Total ALUs (often speculative on newer GPUs)
-    pub gmem_size_kb: u32,         // On-chip GMEM (sometimes estimated)
-    pub bus_width_bits: u32,       // Memory bus width
-    pub max_freq_mhz: u32,         // Typical/max boost frequency
-    pub process_nm: u32,           // Manufacturing process
-    pub year: u32,                 // Release year
-    pub snapdragon_models: &'static [&'static str],
+    pub shader_cores: u32,
+    pub stream_processors: u32,
+    pub gmem_size_kb: u32,
+    pub bus_width_bits: u32,
+    pub max_freq_mhz: u32,
+    pub process_nm: u32,
+    pub year: u32,
+    pub snapdragon_models: &'static [&'static str],  // Bleibt &'static str
     pub confidence: SpecConfidence,
 }
 

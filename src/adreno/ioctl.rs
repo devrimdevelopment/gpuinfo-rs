@@ -1,5 +1,5 @@
 //! Typisierte KGSL ioctl-Strukturen und Funktionen
-
+//! 
 use nix::ioctl_readwrite;
 use std::os::unix::io::RawFd;
 
@@ -13,106 +13,106 @@ pub const KGSL_IOC_MAGIC: u8 = b'p';
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KgslPropertyType {
     DeviceInfo = 0x1,
-}
-
-/// KGSL Device Get Property ioctl structure
-#[repr(C)]
-pub struct KgslDeviceGetProperty {
-    pub type_: u32,
-    pub value: *mut std::ffi::c_void,
-    pub sizebytes: u32,
-}
-
-/// KGSL Device Info structure
-#[repr(C)]
-#[derive(Debug, Clone, Copy)]
-pub struct KgslDeviceInfo {
-    pub device_id: u32,
-    pub chip_id: u32,
-    pub mmu_enabled: u32,
-    pub gmem_gpubaseaddr: u32,
-    pub gmem_sizebytes: u32,
-    pub unknown1: u32,
-    pub unknown2: u32,
-    pub gpu_model: u32,
-}
-
-impl Default for KgslDeviceInfo {
-    fn default() -> Self {
-        Self {
-            device_id: 0,
-            chip_id: 0,
-            mmu_enabled: 0,
-            gmem_gpubaseaddr: 0,
-            gmem_sizebytes: 0,
-            unknown1: 0,
-            unknown2: 0,
-            gpu_model: 0,
-        }
-    }
-}
-
-// Typisierte ioctl mit nix
-ioctl_readwrite!(
-    kgsl_get_property,
-    KGSL_IOC_MAGIC,
-    0x02,  // KGSL_IOCTL_GETPROPERTY
-    KgslDeviceGetProperty
-);
-
-/// Get KGSL device info property
-pub fn get_device_info(fd: RawFd) -> GpuResult<KgslDeviceInfo> {
-    let mut device_info = KgslDeviceInfo::default();
-
-    let mut prop = KgslDeviceGetProperty {
-        type_: KgslPropertyType::DeviceInfo as u32,
-        value: &mut device_info as *mut _ as *mut _,
-        sizebytes: std::mem::size_of::<KgslDeviceInfo>() as u32,
-    };
-
-    unsafe {
-        kgsl_get_property(fd, &mut prop).map_err(|e| {
-            match e {
-                nix::Error::ENOTTY => GpuError::DriverNotSupported,
-                nix::Error::EACCES | nix::Error::EPERM => GpuError::PermissionDenied,
-                nix::Error::ENODEV => GpuError::DeviceNotFound,
-                _ => GpuError::IoctlFailed {
-                    request: 0x80020000, // KGSL_IOCTL_GETPROPERTY
-                    source: std::io::Error::from_raw_os_error(e as i32),
-                },
-            }
-        })?;
     }
 
-    Ok(device_info)
-}
+    /// KGSL Device Get Property ioctl structure
+    #[repr(C)]
+    pub struct KgslDeviceGetProperty {
+        pub type_: u32,
+            pub value: *mut std::ffi::c_void,
+                pub sizebytes: u32,
+                }
 
-/// Generic property getter (for future use)
-pub fn get_property(
-    fd: RawFd,
-    property_type: KgslPropertyType,
-    data: *mut std::ffi::c_void,
-    size: usize,
-) -> GpuResult<()> {
-    let mut prop = KgslDeviceGetProperty {
-        type_: property_type as u32,
-        value: data,
-        sizebytes: size as u32,
-    };
+                /// KGSL Device Info structure
+                #[repr(C)]
+                #[derive(Debug, Clone, Copy)]
+                pub struct KgslDeviceInfo {
+                    pub device_id: u32,
+                        pub chip_id: u32,
+                            pub mmu_enabled: u32,
+                                pub gmem_gpubaseaddr: u32,
+                                    pub gmem_sizebytes: u32,
+                                        pub unknown1: u32,
+                                            pub unknown2: u32,
+                                                pub gpu_model: u32,
+                                                }
 
-    unsafe {
-        kgsl_get_property(fd, &mut prop).map_err(|e| {
-            match e {
-                nix::Error::ENOTTY => GpuError::DriverNotSupported,
-                nix::Error::EACCES | nix::Error::EPERM => GpuError::PermissionDenied,
-                nix::Error::ENODEV => GpuError::DeviceNotFound,
-                _ => GpuError::AdrenoPropertyError {
-                    property: property_type as u32,
-                    source: std::io::Error::from_raw_os_error(e as i32),
-                },
-            }
-        })?;
-    }
+                                                impl Default for KgslDeviceInfo {
+                                                    fn default() -> Self {
+                                                            Self {
+                                                                        device_id: 0,
+                                                                                    chip_id: 0,
+                                                                                                mmu_enabled: 0,
+                                                                                                            gmem_gpubaseaddr: 0,
+                                                                                                                        gmem_sizebytes: 0,
+                                                                                                                                    unknown1: 0,
+                                                                                                                                                unknown2: 0,
+                                                                                                                                                            gpu_model: 0,
+                                                                                                                                                                    }
+                                                                                                                                                                        }
+                                                                                                                                                                        }
 
-    Ok(())
-}
+                                                                                                                                                                        // Typisierte ioctl mit nix
+                                                                                                                                                                        ioctl_readwrite!(
+                                                                                                                                                                            kgsl_get_property,
+                                                                                                                                                                                KGSL_IOC_MAGIC,
+                                                                                                                                                                                    0x02,  // KGSL_IOCTL_GETPROPERTY
+                                                                                                                                                                                        KgslDeviceGetProperty
+                                                                                                                                                                                        );
+
+                                                                                                                                                                                        /// Get KGSL device info property
+                                                                                                                                                                                        pub fn get_device_info(fd: RawFd) -> GpuResult<KgslDeviceInfo> {
+                                                                                                                                                                                            let mut device_info = KgslDeviceInfo::default();
+
+                                                                                                                                                                                                let mut prop = KgslDeviceGetProperty {
+                                                                                                                                                                                                        type_: KgslPropertyType::DeviceInfo as u32,
+                                                                                                                                                                                                                value: &mut device_info as *mut _ as *mut _,
+                                                                                                                                                                                                                        sizebytes: std::mem::size_of::<KgslDeviceInfo>() as u32,
+                                                                                                                                                                                                                            };
+
+                                                                                                                                                                                                                                unsafe {
+                                                                                                                                                                                                                                        kgsl_get_property(fd, &mut prop).map_err(|e| {
+                                                                                                                                                                                                                                                    match e {
+                                                                                                                                                                                                                                                                    nix::Error::ENOTTY => GpuError::DriverNotSupported,
+                                                                                                                                                                                                                                                                                    nix::Error::EACCES | nix::Error::EPERM => GpuError::PermissionDenied,
+                                                                                                                                                                                                                                                                                                    nix::Error::ENODEV => GpuError::DeviceNotFound,
+                                                                                                                                                                                                                                                                                                                    _ => GpuError::IoctlFailed {
+                                                                                                                                                                                                                                                                                                                                        request: 0x80020000, // KGSL_IOCTL_GETPROPERTY
+                                                                                                                                                                                                                                                                                                                                                            source: std::io::Error::from_raw_os_error(e as i32),
+                                                                                                                                                                                                                                                                                                                                                                            },
+                                                                                                                                                                                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                                                                                                                                                                                                })?;
+                                                                                                                                                                                                                                                                                                                                                                                                    }
+
+                                                                                                                                                                                                                                                                                                                                                                                                        Ok(device_info)
+                                                                                                                                                                                                                                                                                                                                                                                                        }
+
+                                                                                                                                                                                                                                                                                                                                                                                                        /// Generic property getter (for future use)
+                                                                                                                                                                                                                                                                                                                                                                                                        pub fn get_property(
+                                                                                                                                                                                                                                                                                                                                                                                                            fd: RawFd,
+                                                                                                                                                                                                                                                                                                                                                                                                                property_type: KgslPropertyType,
+                                                                                                                                                                                                                                                                                                                                                                                                                    data: *mut std::ffi::c_void,
+                                                                                                                                                                                                                                                                                                                                                                                                                        size: usize,
+                                                                                                                                                                                                                                                                                                                                                                                                                        ) -> GpuResult<()> {
+                                                                                                                                                                                                                                                                                                                                                                                                                            let mut prop = KgslDeviceGetProperty {
+                                                                                                                                                                                                                                                                                                                                                                                                                                    type_: property_type as u32,
+                                                                                                                                                                                                                                                                                                                                                                                                                                            value: data,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                    sizebytes: size as u32,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                        };
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                            unsafe {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                    kgsl_get_property(fd, &mut prop).map_err(|e| {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                match e {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                nix::Error::ENOTTY => GpuError::DriverNotSupported,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                nix::Error::EACCES | nix::Error::EPERM => GpuError::PermissionDenied,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                nix::Error::ENODEV => GpuError::DeviceNotFound,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                _ => GpuError::AdrenoPropertyError {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    property: property_type as u32,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        source: std::io::Error::from_raw_os_error(e as i32),
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        },
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            })?;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    Ok(())
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }

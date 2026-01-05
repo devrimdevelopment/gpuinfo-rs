@@ -1,4 +1,4 @@
-
+use std::borrow::Cow; 
 use std::fs::OpenOptions;
 use std::os::unix::io::{AsRawFd, RawFd};
 use std::path::Path;
@@ -89,22 +89,22 @@ impl QueryStrategy for ParityStrategy {
         };
 
         // Try to get product info from database
-        let (gpu_name, architecture, arch_major, arch_minor, gpu_id) =
+        let (gpu_name_cow, architecture_cow, arch_major, arch_minor, gpu_id) =
             if self.use_product_db() {
                 if let Some(product_info) = lookup_product(get_gpu_id(parsed.gpu_id), parsed.num_shader_cores) {
                     let (major, minor) = extract_architecture(parsed.raw_gpu_id);
                     (
-                        product_info.name.to_string(),
-                        product_info.architecture.to_string(),
+                        Cow::Borrowed(product_info.name),      // Direkt Cow erstellen
+                        Cow::Borrowed(product_info.architecture),
                         major,
                         minor,
                         get_gpu_id(parsed.gpu_id)
                     )
                 } else {
-                    (String::new(), String::new(), 0, 0, parsed.gpu_id)
+                    (Cow::Borrowed(""), Cow::Borrowed(""), 0, 0, parsed.gpu_id)
                 }
             } else {
-                (String::new(), String::new(), 0, 0, parsed.gpu_id)
+                (Cow::Borrowed(""), Cow::Borrowed(""), 0, 0, parsed.gpu_id)
             };
 
         let mali_data = MaliData {
@@ -121,8 +121,8 @@ impl QueryStrategy for ParityStrategy {
 
         Ok(GpuInfo {
             vendor: GpuVendor::Mali,
-            gpu_name,
-            architecture,
+            gpu_name: gpu_name_cow,        
+            architecture: architecture_cow, 
             architecture_major: arch_major,
             architecture_minor: arch_minor,
             num_shader_cores: parsed.num_shader_cores,
@@ -224,8 +224,8 @@ impl QueryStrategy for ExtendedStrategy {
 
         let info = GpuInfo {
             vendor: GpuVendor::Mali,
-            gpu_name: product_info.name.to_string(),
-            architecture: product_info.architecture.to_string(),
+            gpu_name: Cow::Borrowed(product_info.name),  
+            architecture: Cow::Borrowed(product_info.architecture), 
             architecture_major: arch_major,
             architecture_minor: arch_minor,
             num_shader_cores: parsed.num_shader_cores,

@@ -1,24 +1,24 @@
-# gpuinfo-rs
+# armgpuinfo
 
-[![GitHub](https://img.shields.io/badge/github-view_repo-blue?logo=github)](https://github.com/devrimdevelopment/gpuinfo-rs)
-[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](https://github.com/devrimdevelopment/gpuinfo-rs)
+[![GitHub](https://img.shields.io/badge/github-view_repo-blue?logo=github)](https://github.com/devrimdevelopment/armgpuinfo)
+[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](https://github.com/devrimdevelopment/armgpuinfo)
 
 A unified, lightweight Rust library for querying GPU hardware metadata on **Linux** and **Android** systems.
 
-`gpuinfo-rs` provides a safe, high-level API to interact directly with kernel drivers (ARM Mali and Qualcomm Adreno/KGSL) via ioctls, retrieving model names, revision codes, architecture details, and hardware capabilities.
+`armgpuinfo` provides a safe, high-level API to interact directly with kernel drivers (ARM Mali and Qualcomm Adreno/KGSL) via ioctls, retrieving model names, revision codes, architecture details, and hardware capabilities.
 
 It is specifically designed for **mobile SoCs** and **embedded / single-board computers (SBCs)** where standard graphics APIs (Vulkan, OpenGL) are either unavailable or insufficient for low-level hardware identification.
 
 ---
 
-## Why gpuinfo-rs?
+## Why armgpuinfo?
 
 Retrieving accurate GPU information on mobile and embedded Linux is notoriously difficult:
 
 * Vendor-specific kernel interfaces (ioctls) hide the real hardware IDs.
 * Many solutions rely on fragile `/sys` parsing or require root privileges.
 
-`gpuinfo-rs` solves this by:
+`armgpuinfo` solves this by:
 
 * **Zero external dependencies** – communicates directly with the kernel
 * **No heavy graphics libraries** required at compile- or runtime
@@ -62,13 +62,13 @@ Add this to your `Cargo.toml`:
 
 ```text
 [dependencies]
-gpuinfo-rs = { git = "https://github.com/devrimdevelopment/gpuinfo-rs" }
+armgpuinfo = { git = "https://github.com/devrimdevelopment/armgpuinfo" }
 ```
 
 
 ```text
 [dependencies]
-gpuinfo-rs = "0.1.0" 
+armgpuinfo = "0.1.0" 
 ```
 
 ---
@@ -80,7 +80,7 @@ gpuinfo-rs = "0.1.0"
 The simplest way – automatically finds the active GPU driver.
 
 ```rust
-use gpuinfo_rs::query_gpu_auto;
+use armgpuinfo::query_gpu_auto;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let info = query_gpu_auto(None::<&str>)?; // optional hint path if needed
@@ -100,10 +100,10 @@ When you know the exact driver node.
 
 ```rust
 // ARM Mali
-let mali_info = gpuinfo_rs::mali::query_mali("/dev/mali0")?;
+let mali_info = armgpuinfo::mali::query_mali("/dev/mali0")?;
 
 // Qualcomm Adreno
-let adreno_info = gpuinfo_rs::adreno::query_adreno("/dev/kgsl-3d0")?;
+let adreno_info = armgpuinfo::adreno::query_adreno("/dev/kgsl-3d0")?;
 ```
 
 ---
@@ -134,9 +134,8 @@ cargo build --release --no-default-features --features mali
 ├── README.md
 ├── LICENCE
 ├── examples/
-│ ├── auto_detect_demo.rs             # Auto-detection example
-│ ├── adreno_demo.rs                  # Qualcomm Adreno example
-│ └── mode_demo.rs                    # Query mode showcase
+│ ├── my_example.rs
+│ └──  simple_demo.rs                  
 └── src/
 ├── lib.rs                            # Public API entry point
 ├── info.rs                           # Shared GpuInfo structures
@@ -144,13 +143,16 @@ cargo build --release --no-default-features --features mali
 ├── detect.rs                         # Auto-detection logic
 ├── mali/
 │ ├── mod.rs
-│ ├── query.rs                        # Mali ioctl queries
-│ ├── parser.rs                       # Bitfield / register parsing
-│ └── database.rs                     # Mali hardware ID lookup tables
+│ ├── query.rs                        
+│ ├── parser.rs                       
+│ └── database.rs                     
 └── adreno/
 ├── mod.rs
-├── query.rs                          # Adreno KGSL queries
-└── database.rs                       # Adreno chip database
+├── strategy.rs  
+├── ioctl.rs
+├── query.rs
+├── parser.rs                         
+└── database.rs                       
 ```
 
 ---
@@ -160,14 +162,8 @@ cargo build --release --no-default-features --features mali
 The repository includes demos:
 
 ```bash
-# Auto-detection demo
-cargo run --example auto_detect --features "auto-detect"
+# Simple Demo
 
-# Mali-specific demo
-cargo run --example mali_demo --features mali
-
-# Adreno-specific demo
-cargo run --example adreno_demo --features adreno
 ```
 
 ---
@@ -177,15 +173,12 @@ cargo run --example adreno_demo --features adreno
 * Add Broadcom VideoCore support (Raspberry Pi)
 * Add NVIDIA Tegra/Orin support (Jetson)
 * Extend database coverage (more chip IDs, confidence levels)
-* Optional fallback to sysfs/Vulkan when ioctls are unavailable
 
 Contributions are welcome! Especially:
 
 * New chip ID mappings
 * Support for additional vendors
 * Testing on real hardware
-
-Please open an issue or PR on GitHub.
 
 ---
 

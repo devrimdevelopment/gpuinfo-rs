@@ -155,8 +155,7 @@ impl GpuError {
     pub fn is_permission_error(&self) -> bool {
         matches!(self, GpuError::PermissionDenied) ||
         self.as_io_error()
-            .map(|e| e.kind() == std::io::ErrorKind::PermissionDenied)
-            .unwrap_or(false)
+            .map_or(false, |e| e.kind() == std::io::ErrorKind::PermissionDenied)
     }
 
     /// Check if error indicates the device doesn't exist
