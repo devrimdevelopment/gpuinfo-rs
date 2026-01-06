@@ -29,10 +29,11 @@ fn get_device_info_standard(fd: RawFd) -> GpuResult<KgslDeviceInfo> {
     };
     
     // Standard KGSL_IOCTL_GETPROPERTY = 0x80020000
-    const KGSL_IOCTL_GETPROPERTY: libc::c_ulong = 0x80020000;
+    // WICHTIG: as _ lässt Rust den richtigen Typ inferieren
+    const KGSL_IOCTL_GETPROPERTY: u64 = 0x80020000;
     
     unsafe {
-        let result = libc::ioctl(fd, KGSL_IOCTL_GETPROPERTY, &mut prop);
+        let result = libc::ioctl(fd, KGSL_IOCTL_GETPROPERTY as _, &mut prop);
         
         if result == 0 {
             Ok(device_info)
@@ -44,7 +45,7 @@ fn get_device_info_standard(fd: RawFd) -> GpuResult<KgslDeviceInfo> {
                 Some(libc::EPERM) | Some(libc::EACCES) => Err(GpuError::PermissionDenied),
                 Some(libc::ENODEV) => Err(GpuError::DeviceNotFound),
                 _ => Err(GpuError::IoctlFailed {
-                    request: KGSL_IOCTL_GETPROPERTY as u64,
+                    request: KGSL_IOCTL_GETPROPERTY,
                     source: err,
                 }),
             }
@@ -55,8 +56,8 @@ fn get_device_info_standard(fd: RawFd) -> GpuResult<KgslDeviceInfo> {
 /// Alternative IOCTLs basierend auf deinem Scan
 fn get_device_info_alternatives(fd: RawFd) -> GpuResult<KgslDeviceInfo> {
     // IOCTLs die in deinem Scan funktioniert haben
-    // Als u64 speichern, dann zu libc::c_ulong konvertieren
-    let alternative_ioctls: &[libc::c_ulong] = &[
+    // Als u64 speichern, dann mit as _ konvertieren
+    let alternative_ioctls: &[u64] = &[
         0x80006738,  // nr=0x38, size=0
         0x80006739,  // nr=0x39, size=0  
         0x8000673a,  // nr=0x3a, size=0
@@ -87,7 +88,7 @@ fn get_device_info_alternatives(fd: RawFd) -> GpuResult<KgslDeviceInfo> {
 }
 
 /// Teste eine spezifische IOCTL-Variante
-fn try_ioctl_variant(fd: RawFd, request: libc::c_ulong) -> GpuResult<KgslDeviceInfo> {
+fn try_ioctl_variant(fd: RawFd, request: u64) -> GpuResult<KgslDeviceInfo> {
     let mut device_info = KgslDeviceInfo::default();
     
     let mut prop = KgslDeviceGetProperty {
@@ -97,7 +98,8 @@ fn try_ioctl_variant(fd: RawFd, request: libc::c_ulong) -> GpuResult<KgslDeviceI
     };
     
     unsafe {
-        let result = libc::ioctl(fd, request, &mut prop);
+        // WICHTIG: as _ für platform-abhängigen Typ
+        let result = libc::ioctl(fd, request as _, &mut prop);
         
         if result == 0 {
             // Überprüfe ob die Daten sinnvoll sind
@@ -113,7 +115,7 @@ fn try_ioctl_variant(fd: RawFd, request: libc::c_ulong) -> GpuResult<KgslDeviceI
                 Some(libc::EPERM) | Some(libc::EACCES) => Err(GpuError::PermissionDenied),
                 Some(libc::ENODEV) => Err(GpuError::DeviceNotFound),
                 _ => Err(GpuError::IoctlFailed {
-                    request: request as u64,
+                    request,
                     source: err,
                 }),
             }
@@ -134,14 +136,15 @@ pub fn get_property(
         sizebytes: size as u32,
     };
 
-    // Versuche verschiedene IOCTLs (als c_ulong)
-    let ioctls_to_try: &[libc::c_ulong] = &[
+    // Versuche verschiedene IOCTLs (als u64)
+    let ioctls_to_try: &[u64] = &[
         0x80020000, 0x80006738, 0x80006739, 0x8000673a, 0x80006740
     ];
     
     for &request in ioctls_to_try {
         unsafe {
-            let result = libc::ioctl(fd, request, &mut prop);
+            // as _ für platform-abhängigen Typ
+            let result = libc::ioctl(fd, request as _, &mut prop);
             
             if result == 0 {
                 return Ok(());
@@ -163,7 +166,7 @@ pub fn get_property(
 
 /// Detect which ioctl variant works on this device
 pub fn detect_working_ioctl(fd: RawFd) -> GpuResult<u64> {
-    let test_ioctls: &[libc::c_ulong] = &[
+    let test_ioctls: &[u64] = &[
         0x80020000,  // Standard
         0x80006738,  // Alternative 1
         0x80006739,  // Alternative 2
@@ -175,16 +178,17 @@ pub fn detect_working_ioctl(fd: RawFd) -> GpuResult<u64> {
         let mut dummy: libc::c_int = 0;
         
         unsafe {
-            let result = libc::ioctl(fd, request, &mut dummy);
+            // as _ für platform-abhängigen Typ
+            let result = libc::ioctl(fd, request as _, &mut dummy);
             
             // Auch EINVAL ist okay - bedeutet IOCTL existiert, aber Parameter falsch
             if result == 0 {
-                return Ok(request as u64);
+                return Ok(request);
             }
             
             let err = std::io::Error::last_os_error();
             if err.raw_os_error() == Some(libc::EINVAL) {
-                return Ok(request as u64);
+                return Ok(request);
             }
         }
     }
