@@ -16,6 +16,7 @@ dependencies = [
  "libc",
  "mockall",
  "nix",
+ "once_cell",
  "tempfile",
  "thiserror",
 ]

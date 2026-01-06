@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
         Err(GpuError::DeviceNotFound) => {
-            println!("❌ No GPU device found");
+            println!("❌ No Mali/Adreno GPU found");
         }
         Err(GpuError::PermissionDenied) => {
             println!("❌ Permission denied");

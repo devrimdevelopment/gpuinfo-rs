@@ -4,10 +4,11 @@
 //! via KGSL kernel driver ioctls on Linux/Android systems.
 
 // Re-export public API
-pub use query::{query_adreno, query_adreno_with_mode};
+pub use query::{query_adreno, query_adreno_with_mode, query_adreno_robust};
 
 // Internal modules
 mod ioctl;
+mod ioctl_impl;
 mod database;
 mod query;
 
@@ -29,8 +30,15 @@ impl Default for Mode {
 /// Database access functions
 pub use database::{find_adreno_specs, AdrenoSpecs, SpecConfidence, AdrenoArch};
 
-/// Ioctl structures and functions
+/// Ioctl structures
 pub use ioctl::{
     KgslDeviceGetProperty, KgslDeviceInfo, KgslPropertyType,
-    get_device_info, get_property,
 };
+
+/// Ioctl implementation functions
+pub use ioctl_impl::{
+    get_device_info, get_property, detect_working_ioctl,
+};
+
+#[cfg(feature = "debug")]
+pub use query::debug_device_info;
